@@ -153,6 +153,8 @@ Code Context: ${codeContext}`;
 
   async checkConnection() {
     try {
+      const apiKey = getApiKey()?.trim();
+      console.log(`[AI Health Check] Using key prefix: ${apiKey?.substring(0, 8)}...`);
       const data = await callGeminiAPI({
         contents: [{ parts: [{ text: "Respond with 'pong'." }] }]
       });
