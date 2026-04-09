@@ -157,26 +157,26 @@ Code Context: ${codeContext}`;
       const prefix = apiKey ? apiKey.substring(0, 8) : 'MISSING';
       console.log(`[AI Diagnostic] Testing connection with key prefix: ${prefix}...`);
       
-      // Step 1: Try to list models (this confirms if the key is valid)
       const baseUrl = import.meta.env.DEV ? '/gemini-api' : 'https://generativelanguage.googleapis.com';
       const modelsRes = await fetch(`${baseUrl}/v1/models?key=${apiKey}`);
       const modelsData = await modelsRes.json();
       
       if (!modelsRes.ok) {
-        console.error("[AI Diagnostic] Could not list models. Key might be invalid.", modelsData);
-        return { 
-          ok: false, 
-          error: modelsData.error?.message || "Invalid API Key",
-          isKeyError: true 
-        };
+        console.error("[AI Diagnostic] Could not list models.", modelsData);
+        return { ok: false, error: "Invalid API Key", isKeyError: true };
       }
       
-      console.log("[AI Diagnostic] Key is VALID. Available models found:", modelsData.models?.length);
+      const modelNames = modelsData.models?.map(m => m.name.replace('models/', '')) || [];
+      console.log("[AI Diagnostic] Key is VALID. Models Found:", modelNames);
 
-      // Step 2: Try a simple ping
+      // Step 2: Try a simple ping using the first model in the list as a fallback
+      const testModel = modelNames.includes('gemini-1.5-flash') ? 'gemini-1.5-flash' : modelNames[0];
+      console.log(`[AI Diagnostic] Attempting ping with model: ${testModel}`);
+      
       const data = await callGeminiAPI({
         contents: [{ parts: [{ text: "Respond with 'pong'." }] }]
-      });
+      }, {}, MODELS.indexOf(testModel) !== -1 ? MODELS.indexOf(testModel) : 0);
+      
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       return { ok: true, message: text };
     } catch (error) {
