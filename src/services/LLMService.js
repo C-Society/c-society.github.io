@@ -13,11 +13,13 @@ const getApiKey = () => {
   return rawKey || '';
 };
 
+// Verified models available for this key
 const MODELS = [
-  'gemini-1.5-flash',
-  'gemini-1.5-flash-latest',
-  'gemini-1.5-pro',
-  'gemini-2.0-flash-exp'
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-001',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash-lite'
 ];
 
 const API_VERSIONS = ['v1', 'v1beta'];
@@ -27,9 +29,7 @@ const API_VERSIONS = ['v1', 'v1beta'];
  */
 async function callGeminiAPI(payload, options = {}, modelIndex = 0, versionIndex = 0) {
   const apiKey = getApiKey()?.trim();
-  if (!apiKey) {
-    throw new Error("Missing Gemini API Key.");
-  }
+  if (!apiKey) throw new Error("Missing Gemini API Key.");
 
   const model = MODELS[modelIndex];
   const version = API_VERSIONS[versionIndex];
@@ -45,11 +45,12 @@ async function callGeminiAPI(payload, options = {}, modelIndex = 0, versionIndex
     const data = await response.json();
 
     if (!response.ok) {
-      // If we have more versions to try for this model
+      console.warn(`[AI] ${version}/${model} failed:`, data.error?.message);
+      // Try next version for the same model
       if (versionIndex < API_VERSIONS.length - 1) {
         return await callGeminiAPI(payload, options, modelIndex, versionIndex + 1);
       }
-      // If we have more models to try
+      // Try next model
       if (modelIndex < MODELS.length - 1) {
         return await callGeminiAPI(payload, options, modelIndex + 1, 0);
       }
@@ -96,7 +97,7 @@ export const LLMService = {
     const prompt = `You are a world-class, dynamic Senior Polyglot Programming Tutor. 
 Analyze the student's context: ${language}, ${skillLevel}, completed: ${completedLessons.join(', ')}.
 Generate a JSON lesson object: {id, title, concept, explanation, task, initialCode}.
-Output ONLY JSON.`;
+Output ONLY JSON. Use standard JSON escaping.`;
 
     const data = await callGeminiAPI({
       contents: [{ parts: [{ text: prompt }] }],
@@ -112,7 +113,7 @@ Output ONLY JSON.`;
 Task: ${lessonTask}
 Code: ${userCode}
 Output: ${executionOutput}
-Output ONLY JSON: {isPassed, feedback, newWeaknesses}.`;
+Output ONLY JSON: {isPassed, feedback, newWeaknesses}. Use standard JSON escaping.`;
 
     const data = await callGeminiAPI({
       contents: [{ parts: [{ text: prompt }] }],
@@ -125,7 +126,7 @@ Output ONLY JSON: {isPassed, feedback, newWeaknesses}.`;
 
   async chatWithAgent(chatHistory, currentLesson, codeContext) {
     const systemInstruction = `You are 'Code Companion', a supportive programming tutor. 
-Currently working on: ${currentLesson?.title}. 
+Currently working on: ${currentLesson?.title || 'coding'}. 
 Code Context: ${codeContext}`;
 
     const contents = [
@@ -153,34 +154,13 @@ Code Context: ${codeContext}`;
 
   async checkConnection() {
     try {
-      const apiKey = getApiKey()?.trim();
-      const prefix = apiKey ? apiKey.substring(0, 8) : 'MISSING';
-      console.log(`[AI Diagnostic] Testing connection with key prefix: ${prefix}...`);
-      
-      const baseUrl = import.meta.env.DEV ? '/gemini-api' : 'https://generativelanguage.googleapis.com';
-      const modelsRes = await fetch(`${baseUrl}/v1/models?key=${apiKey}`);
-      const modelsData = await modelsRes.json();
-      
-      if (!modelsRes.ok) {
-        console.error("[AI Diagnostic] Could not list models.", modelsData);
-        return { ok: false, error: "Invalid API Key", isKeyError: true };
-      }
-      
-      const modelNames = modelsData.models?.map(m => m.name.replace('models/', '')) || [];
-      console.log("[AI Diagnostic] Key is VALID. Models Found:", modelNames);
-
-      // Step 2: Try a simple ping using the first model in the list as a fallback
-      const testModel = modelNames.includes('gemini-1.5-flash') ? 'gemini-1.5-flash' : modelNames[0];
-      console.log(`[AI Diagnostic] Attempting ping with model: ${testModel}`);
-      
       const data = await callGeminiAPI({
         contents: [{ parts: [{ text: "Respond with 'pong'." }] }]
-      }, {}, MODELS.indexOf(testModel) !== -1 ? MODELS.indexOf(testModel) : 0);
-      
+      });
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       return { ok: true, message: text };
     } catch (error) {
-      console.error("[AI Diagnostic] Health Check Failed:", error);
+      console.error("[AI] Health Check Failed:", error);
       return { 
         ok: false, 
         error: error.message,
