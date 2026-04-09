@@ -1,0 +1,8 @@
+--extra-index-url https://download.pytorch.org/whl/cu121
+fastapi
+uvicorn
+TTS
+pydantic
+torch==2.5.1+cu121
+torchaudio==2.5.1+cu121
+transformers==4.37.2
