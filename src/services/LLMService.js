@@ -18,10 +18,11 @@ const getApiKey = () => {
 // Initialize the API with Vite environment variable (supports plain or B64 encoded)
 const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
-const MODEL = 'gemini-1.5-flash';
+const MODEL = 'gemini-2.0-flash-exp';
 
 // Helper to extract JSON from markdown code blocks
 const extractJSON = (text) => {
+  if (!text) return null;
   // Pass 1: Simple cleanup of markdown blocks
   let cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
   
@@ -91,14 +92,15 @@ Make the lesson highly relevant and engaging. If they are a beginner, start from
 CRITICAL INSTRUCTION: Output ONLY a valid JSON object. Do NOT wrap your response in markdown code blocks. Do NOT output any additional text. Your entire response must be parsable by JSON.parse(). 
 IMPORTANT: Use standard JSON escaping. Do NOT use illegal escapes like \\[ or \\*. All newlines in strings must be escaped as \\n.`;
 
-    const model = ai.getGenerativeModel({ 
+    const response = await ai.models.generateContent({
       model: MODEL,
-      generationConfig: { responseMimeType: 'application/json' }
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+      }
     });
     
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return extractJSON(response.text());
+    return extractJSON(response.text);
   },
 
   /**
@@ -130,14 +132,15 @@ Output ONLY a JSON object:
 CRITICAL INSTRUCTION: Output ONLY a valid JSON object. Do NOT wrap your response in markdown code blocks. Do NOT output any additional text. Your entire response must be parsable by JSON.parse(). 
 IMPORTANT: Use standard JSON escaping. Do NOT use illegal escapes like \\[ or \\*. All newlines in strings must be escaped as \\n.`;
 
-    const model = ai.getGenerativeModel({ 
+    const response = await ai.models.generateContent({
       model: MODEL,
-      generationConfig: { responseMimeType: 'application/json' }
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+      }
     });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return extractJSON(response.text());
+    return extractJSON(response.text);
   },
 
   /**
@@ -171,10 +174,12 @@ Always respond in Markdown.`;
       }))
     ];
 
-    const model = ai.getGenerativeModel({ model: MODEL });
-    const result = await model.generateContent({ contents });
-    const response = await result.response;
-    return response.text();
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: contents,
+    });
+
+    return response.text;
   },
 
   /**
@@ -193,12 +198,13 @@ If there are compilation or runtime errors, output the exact error message that 
 If it succeeds, output exactly what the program prints to stdout.
 Do NOT include any markdown, explanations, or conversational text. Output ONLY the raw terminal output.`;
 
-    const model = ai.getGenerativeModel({ model: MODEL });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: prompt,
+    });
+
     // Clean any stray backticks just in case
-    let output = response.text().trim();
+    let output = response.text?.trim() || '';
     if (output.startsWith('\`\`\`')) {
       output = output.replace(/^```.*?\n/, '').replace(/\n```$/, '');
     }
@@ -212,10 +218,12 @@ Do NOT include any markdown, explanations, or conversational text. Output ONLY t
    */
   async checkConnection() {
     try {
-      const model = ai.getGenerativeModel({ model: MODEL });
-      const result = await model.generateContent("Respond with 'pong' if you can hear me.");
-      const response = await result.response;
-      return { ok: true, message: response.text() };
+      const response = await ai.models.generateContent({
+        model: MODEL,
+        contents: "Respond with 'pong' if you can hear me.",
+        config: { maxOutputTokens: 5 }
+      });
+      return { ok: true, message: response.text };
     } catch (error) {
       console.error("API Health Check Failed:", error);
       return { 
