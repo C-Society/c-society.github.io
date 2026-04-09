@@ -154,14 +154,33 @@ Code Context: ${codeContext}`;
   async checkConnection() {
     try {
       const apiKey = getApiKey()?.trim();
-      console.log(`[AI Health Check] Using key prefix: ${apiKey?.substring(0, 8)}...`);
+      const prefix = apiKey ? apiKey.substring(0, 8) : 'MISSING';
+      console.log(`[AI Diagnostic] Testing connection with key prefix: ${prefix}...`);
+      
+      // Step 1: Try to list models (this confirms if the key is valid)
+      const baseUrl = import.meta.env.DEV ? '/gemini-api' : 'https://generativelanguage.googleapis.com';
+      const modelsRes = await fetch(`${baseUrl}/v1/models?key=${apiKey}`);
+      const modelsData = await modelsRes.json();
+      
+      if (!modelsRes.ok) {
+        console.error("[AI Diagnostic] Could not list models. Key might be invalid.", modelsData);
+        return { 
+          ok: false, 
+          error: modelsData.error?.message || "Invalid API Key",
+          isKeyError: true 
+        };
+      }
+      
+      console.log("[AI Diagnostic] Key is VALID. Available models found:", modelsData.models?.length);
+
+      // Step 2: Try a simple ping
       const data = await callGeminiAPI({
         contents: [{ parts: [{ text: "Respond with 'pong'." }] }]
       });
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       return { ok: true, message: text };
     } catch (error) {
-      console.error("API Health Check Failed:", error);
+      console.error("[AI Diagnostic] Health Check Failed:", error);
       return { 
         ok: false, 
         error: error.message,
