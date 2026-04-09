@@ -18,7 +18,7 @@ const getApiKey = () => {
 // Initialize the API with Vite environment variable (supports plain or B64 encoded)
 const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
-const MODEL = 'gemini-2.5-flash';
+const MODEL = 'gemini-1.5-flash';
 
 // Helper to extract JSON from markdown code blocks
 const extractJSON = (text) => {
