@@ -11,6 +11,24 @@ import { useStore } from '../../store/useStore';
 import { LLMService } from '../../services/LLMService';
 import '../../ate-styles.css';
 
+export const MainDashboard = () => {
+  const navigate = useNavigate();
+  const { 
+    language, setLanguage, 
+    hasCompletedOnboarding, setOnboardingComplete,
+    isAdvancedMode, setAdvancedMode 
+  } = useStore();
+
+  const [showAssessment, setShowAssessment] = useState(!hasCompletedOnboarding);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [leftWidth, setLeftWidth] = useState(380);
+  const [rightWidth, setRightWidth] = useState(350);
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+  const [isResizingRight, setIsResizingRight] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'connecting', 'online', 'error'
+  const [apiError, setApiError] = useState(null);
+
+  const dashboardRef = useRef(null);
   const [activeTab, setActiveTab] = useState('lesson'); // 'lesson', 'editor', 'chat'
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
