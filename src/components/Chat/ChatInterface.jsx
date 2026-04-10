@@ -191,7 +191,7 @@ export const ChatInterface = () => {
             </div>
           </div>
         )}
-        
+        {chatHistory.map((msg, index) => (
           <div key={index} className={`chat-bubble ${msg.role === 'user' ? 'chat-user' : 'chat-agent'}`} style={{
             boxShadow: msg.role === 'agent' ? '0 4px 12px rgba(99, 102, 241, 0.1)' : 'none',
             border: msg.role === 'agent' ? '1px solid rgba(99, 102, 241, 0.2)' : '1px solid transparent',

@@ -13,13 +13,15 @@ const getApiKey = () => {
   return rawKey || '';
 };
 
-// Verified models available for this key
+// Verified models available for the user's specific key
 const MODELS = [
   'gemini-2.0-flash',
   'gemini-2.0-flash-001',
   'gemini-2.5-flash-lite',
+  'gemini-2.0-flash-lite',
+  'gemini-2.0-flash-lite-001',
   'gemini-2.5-flash',
-  'gemini-2.0-flash-lite'
+  'gemini-2.5-pro'
 ];
 
 const API_VERSIONS = ['v1', 'v1beta'];
@@ -35,6 +37,8 @@ async function callGeminiAPI(payload, options = {}, modelIndex = 0, versionIndex
   const version = API_VERSIONS[versionIndex];
   const baseUrl = import.meta.env.DEV ? '/gemini-api' : 'https://generativelanguage.googleapis.com';
   
+  console.log(`[AI] Requesting ${model} (${version}) [Attempt ${modelIndex + 1}/${MODELS.length}]`);
+
   try {
     const response = await fetch(`${baseUrl}/${version}/models/${model}:generateContent?key=${apiKey}`, {
       method: 'POST',
@@ -42,10 +46,23 @@ async function callGeminiAPI(payload, options = {}, modelIndex = 0, versionIndex
       body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
+    // Check for empty response
+    const textRes = await response.text();
+    let data;
+    try {
+      data = JSON.parse(textRes);
+    } catch (e) {
+      throw new Error(`Invalid JSON response from ${model}`);
+    }
 
     if (!response.ok) {
-      console.warn(`[AI] ${version}/${model} failed:`, data.error?.message);
+      const errorMsg = data.error?.message || response.statusText || "Unknown error";
+      console.warn(`[AI] ${model} (${version}) failed:`, errorMsg);
+      
+      // If it's a 404, the model/version combo doesn't exist.
+      // If it's a 429, we hit the quota. 
+      // In both cases, try the next version or next model.
+      
       // Try next version for the same model
       if (versionIndex < API_VERSIONS.length - 1) {
         return await callGeminiAPI(payload, options, modelIndex, versionIndex + 1);
@@ -54,11 +71,13 @@ async function callGeminiAPI(payload, options = {}, modelIndex = 0, versionIndex
       if (modelIndex < MODELS.length - 1) {
         return await callGeminiAPI(payload, options, modelIndex + 1, 0);
       }
-      throw new Error(data.error?.message || `API Error ${response.status}`);
+      throw new Error(errorMsg);
     }
 
     return data;
   } catch (error) {
+    console.warn(`[AI] Request error for ${model}:`, error.message);
+    // If we have more models to try, move on
     if (modelIndex < MODELS.length - 1) {
       return await callGeminiAPI(payload, options, modelIndex + 1, 0);
     }
