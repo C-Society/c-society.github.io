@@ -11,24 +11,16 @@ import { useStore } from '../../store/useStore';
 import { LLMService } from '../../services/LLMService';
 import '../../ate-styles.css';
 
-export const MainDashboard = () => {
-  const navigate = useNavigate();
-  const { 
-    language, setLanguage, 
-    hasCompletedOnboarding, setOnboardingComplete,
-    isAdvancedMode, setAdvancedMode 
-  } = useStore();
+  const [activeTab, setActiveTab] = useState('lesson'); // 'lesson', 'editor', 'chat'
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
-  const [showAssessment, setShowAssessment] = useState(!hasCompletedOnboarding);
-  const [showTutorial, setShowTutorial] = useState(false);
-  const [leftWidth, setLeftWidth] = useState(380);
-  const [rightWidth, setRightWidth] = useState(350);
-  const [isResizingLeft, setIsResizingLeft] = useState(false);
-  const [isResizingRight, setIsResizingRight] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'connecting', 'online', 'error'
-  const [apiError, setApiError] = useState(null);
-
-  const dashboardRef = useRef(null);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleLangChange = (e) => {
     setLanguage(e.target.value);
@@ -44,15 +36,15 @@ export const MainDashboard = () => {
     setOnboardingComplete(true);
   };
 
-  const startResizingLeft = () => setIsResizingLeft(true);
-  const startResizingRight = () => setIsResizingRight(true);
+  const startResizingLeft = () => { if (!isMobile) setIsResizingLeft(true); };
+  const startResizingRight = () => { if (!isMobile) setIsResizingRight(true); };
   const stopResizing = () => {
     setIsResizingLeft(false);
     setIsResizingRight(false);
   };
 
   const handleMouseMove = (e) => {
-    if (!isResizingLeft && !isResizingRight) return;
+    if (isMobile || (!isResizingLeft && !isResizingRight)) return;
     
     const containerRect = dashboardRef.current?.getBoundingClientRect();
     if (!containerRect) return;
@@ -98,138 +90,127 @@ export const MainDashboard = () => {
     };
     
     checkApi();
-    // Re-check every 5 minutes
     const interval = setInterval(checkApi, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div 
-      className="ate-container" 
+      className={`ate-container ${isMobile ? 'mobile-mode' : ''}`} 
       id="welcome-step" 
       ref={dashboardRef}
       style={{
-        '--left-panel-width': `${leftWidth}px`,
-        '--right-panel-width': `${rightWidth}px`,
+        '--left-panel-width': isMobile ? '100%' : `${leftWidth}px`,
+        '--right-panel-width': isMobile ? '100%' : `${rightWidth}px`,
         cursor: (isResizingLeft || isResizingRight) ? 'col-resize' : 'default',
         userSelect: (isResizingLeft || isResizingRight) ? 'none' : 'auto'
       }}
     >
-      {/* Global Controls Overlay */}
-      <div style={{ position: 'absolute', top: '15px', right: '15px', zIndex: 10, display: 'flex', gap: '10px', alignItems: 'center' }}>
-        <button 
-          onClick={() => navigate('/')}
-          className="btn-secondary"
-          style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold', background: 'rgba(99, 102, 241, 0.15)', borderColor: 'var(--accent-primary)' }}
-        >
-          <ChevronLeft size={16} /> Back to Hub
-        </button>
-        
-        <div id="language-selector-gate">
-          <select 
-            value={language} 
-            onChange={handleLangChange}
-            style={{
-              background: 'var(--bg-tertiary)',
-              color: 'var(--text-primary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
-              padding: '0.4rem 0.8rem',
-              fontFamily: 'var(--font-main)',
-              cursor: 'pointer'
-            }}
-          >
+      {/* Top Header Section */}
+      <header className="ate-header">
+        <div className="header-left">
+          <button onClick={() => navigate('/')} className="back-btn">
+            <ChevronLeft size={18} /> <span>Exit</span>
+          </button>
+          <div className="status-badge" data-status={connectionStatus}>
+            <div className="dot" />
+            <span className="desktop-text">{connectionStatus === 'online' ? 'A.I. ONLINE' : (connectionStatus === 'connecting' ? 'CONNECTING...' : 'ERROR')}</span>
+          </div>
+        </div>
+
+        <div className="header-center">
+          <select value={language} onChange={handleLangChange} className="lang-select">
             <optgroup label="Systems & General">
               <option value="Python">Python</option>
               <option value="JavaScript">JavaScript</option>
               <option value="C++">C++</option>
               <option value="Java">Java</option>
               <option value="Rust">Rust</option>
-              <option value="Go">Go</option>
             </optgroup>
             <optgroup label="Web & Mobile">
               <option value="HTML">HTML / CSS</option>
-              <option value="PHP">PHP</option>
               <option value="Swift">Swift</option>
               <option value="Kotlin">Kotlin</option>
             </optgroup>
-            <optgroup label="Data Science">
-              <option value="SQL">SQL</option>
-              <option value="R">R Language</option>
-            </optgroup>
           </select>
         </div>
-        
-        <button 
-          onClick={() => setShowTutorial(true)}
-          className="btn-secondary"
-          style={{ fontSize: '0.7rem', padding: '0.4rem 0.6rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-        >
-          <HelpCircle size={14} /> Replay Tutorial
-        </button>
 
-        <button 
-          onClick={() => setAdvancedMode(!isAdvancedMode)}
-          className="btn-secondary"
-          style={{ fontSize: '0.7rem', padding: '0.4rem 0.6rem' }}
-        >
-          {isAdvancedMode ? 'Advanced Mode: ON' : 'Basic Mode'}
-        </button>
-
-        {/* Real Connectivity Status */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '0.4rem 0.8rem',
-          borderRadius: '6px',
-          background: connectionStatus === 'online' ? 'rgba(0, 255, 157, 0.1)' : 'rgba(255, 78, 78, 0.1)',
-          border: `1px solid ${connectionStatus === 'online' ? 'rgba(0, 255, 157, 0.2)' : 'rgba(255, 78, 78, 0.2)'}`,
-          fontSize: '0.7rem',
-          fontWeight: 'bold',
-          color: connectionStatus === 'online' ? '#00ff9d' : '#ff4e4e'
-        }}>
-          <div style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: connectionStatus === 'online' ? '#00ff9d' : (connectionStatus === 'connecting' ? '#ffcc00' : '#ff4e4e'),
-            boxShadow: connectionStatus === 'online' ? '0 0 10px #00ff9d' : 'none',
-            animation: connectionStatus === 'connecting' ? 'pulse 1s infinite' : 'none'
-          }} />
-          {connectionStatus === 'online' ? 'A.I. ONLINE' : (connectionStatus === 'connecting' ? 'CONNECTING...' : 'KEY ERROR')}
+        <div className="header-right">
+          <button onClick={() => setShowTutorial(true)} className="icon-btn" title="Replay Tutorial">
+            <HelpCircle size={20} />
+          </button>
+          <button 
+            onClick={() => setAdvancedMode(!isAdvancedMode)} 
+            className={`mode-btn ${isAdvancedMode ? 'active' : ''}`}
+          >
+            {isAdvancedMode ? (isMobile ? 'ADV' : 'Advanced') : (isMobile ? 'BSC' : 'Basic')}
+          </button>
         </div>
-      </div>
+      </header>
+
+      {/* Mobile Tab Navigation */}
+      {isMobile && (
+        <nav className="mobile-tabs">
+          <button 
+            className={activeTab === 'lesson' ? 'active' : ''} 
+            onClick={() => setActiveTab('lesson')}
+          >
+            Lesson
+          </button>
+          <button 
+            className={activeTab === 'editor' ? 'active' : ''} 
+            onClick={() => setActiveTab('editor')}
+          >
+            Code
+          </button>
+          <button 
+            className={activeTab === 'chat' ? 'active' : ''} 
+            onClick={() => setActiveTab('chat')}
+          >
+            Chat
+          </button>
+        </nav>
+      )}
 
       {/* Main Layout Grid */}
       <div className="dashboard-layout">
-        <div id="lesson-panel-gate" style={{ height: '100%' }}>
-          <ErrorBoundary>
-            <LessonPanel />
-          </ErrorBoundary>
-        </div>
+        {(!isMobile || activeTab === 'lesson') && (
+          <div id="lesson-panel-gate" className="panel-wrapper">
+            <ErrorBoundary>
+              <LessonPanel />
+            </ErrorBoundary>
+          </div>
+        )}
         
-        <div 
-          className={`resize-handle ${isResizingLeft ? 'active' : ''}`} 
-          onMouseDown={startResizingLeft}
-        />
+        {!isMobile && (
+          <div 
+            className={`resize-handle ${isResizingLeft ? 'active' : ''}`} 
+            onMouseDown={startResizingLeft}
+          />
+        )}
 
-        <div id="code-editor-gate" style={{ height: '100%' }}>
-          <ErrorBoundary>
-            <CodeEditor />
-          </ErrorBoundary>
-        </div>
+        {(!isMobile || activeTab === 'editor') && (
+          <div id="code-editor-gate" className="panel-wrapper">
+            <ErrorBoundary>
+              <CodeEditor />
+            </ErrorBoundary>
+          </div>
+        )}
         
-        <div 
-          className={`resize-handle ${isResizingRight ? 'active' : ''}`} 
-          onMouseDown={startResizingRight}
-        />
+        {!isMobile && (
+          <div 
+            className={`resize-handle ${isResizingRight ? 'active' : ''}`} 
+            onMouseDown={startResizingRight}
+          />
+        )}
 
-        <div id="chat-interface-gate" style={{ height: '100%' }}>
-          <ErrorBoundary>
-            <ChatInterface />
-          </ErrorBoundary>
-        </div>
+        {(!isMobile || activeTab === 'chat') && (
+          <div id="chat-interface-gate" className="panel-wrapper">
+            <ErrorBoundary>
+              <ChatInterface />
+            </ErrorBoundary>
+          </div>
+        )}
       </div>
 
       {/* Modals & Overlays */}

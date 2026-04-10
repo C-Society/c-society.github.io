@@ -96,32 +96,35 @@ export const CodeEditor = () => {
     }
   };
 
+  const isMobile = window.innerWidth < 768;
+
   return (
     <div className="panel glass-panel editor-container animate-fade-in">
       <div className="panel-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Code size={20} className="title-glow" />
-          <span className="title-glow">Editor • {language}</span>
+          <span className="title-glow desktop-text">Editor • {language}</span>
+          <span className="title-glow mobile-only">{language}</span>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
           {hasError && (
             <button 
               className="btn-secondary" 
               onClick={handleFixError} 
               disabled={isFixing}
-              style={{ color: 'var(--text-accent)', borderColor: 'var(--text-accent)', background: 'rgba(100, 255, 218, 0.1)' }}
+              style={{ color: 'var(--text-accent)', borderColor: 'var(--text-accent)', background: 'rgba(100, 255, 218, 0.1)', padding: isMobile ? '0.4rem' : '0.4rem 0.8rem' }}
             >
-              {isFixing ? 'Fixing...' : '🪄 Fix Error'}
+              {isFixing ? '...' : (isMobile ? '🪄' : '🪄 Fix')}
             </button>
           )}
-          <button className="btn-secondary" onClick={handleExplainCode} disabled={isExplaining}>
-             {isExplaining ? 'Explaining...' : '💡 Explain'}
+          <button className="btn-secondary" onClick={handleExplainCode} disabled={isExplaining} style={{ padding: isMobile ? '0.4rem' : '0.4rem 0.8rem' }}>
+             {isExplaining ? '...' : (isMobile ? '💡' : '💡 Explain')}
           </button>
-          <button className="btn-secondary" onClick={handleRunCode} disabled={isExecuting} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-            <Play size={14} /> {isExecuting ? '...' : 'Run'}
+          <button className="btn-secondary" onClick={handleRunCode} disabled={isExecuting} style={{ display: 'flex', gap: '4px', alignItems: 'center', padding: isMobile ? '0.4rem' : '0.4rem 0.8rem' }}>
+            <Play size={14} /> <span className="desktop-text">{isExecuting ? '...' : 'Run'}</span>
           </button>
-          <button className="btn-primary" onClick={handleAssess} disabled={isAssessing || !currentLesson} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-            <CheckCircle size={14} /> {isAssessing ? 'Assessing...' : 'Submit'}
+          <button className="btn-primary" onClick={handleAssess} disabled={isAssessing || !currentLesson} style={{ display: 'flex', gap: '4px', alignItems: 'center', padding: isMobile ? '0.4rem' : '0.4rem 0.8rem' }}>
+            <CheckCircle size={14} /> <span className="desktop-text">{isAssessing ? '...' : 'Submit'}</span>
           </button>
         </div>
       </div>
@@ -136,7 +139,7 @@ export const CodeEditor = () => {
           loading={<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}><Loader className="animate-spin" /> Preparing Editor...</div>}
           options={{
             minimap: { enabled: false },
-            fontSize: 14,
+            fontSize: isMobile ? 12 : 14,
             fontFamily: 'JetBrains Mono, monospace',
             padding: { top: 16 },
             scrollBeyondLastLine: false,
@@ -145,23 +148,29 @@ export const CodeEditor = () => {
             renderLineHighlight: 'all',
             cursorBlinking: 'smooth',
             automaticLayout: true,
+            wordWrap: 'on'
           }}
         />
       </div>
 
-      <div className="terminal-panel" style={{ background: '#050508', borderTop: '2px solid var(--bg-tertiary)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-          <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Console Output</span>
-          {output && <button onClick={() => setOutput('')} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.7rem' }}>Clear</button>}
+      <div className="terminal-panel" style={{ 
+        height: isMobile ? '150px' : '200px',
+        background: '#050508', 
+        borderTop: '2px solid var(--bg-tertiary)' 
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Console</span>
+          {output && <button onClick={() => setOutput('')} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.65rem' }}>Clear</button>}
         </div>
         <pre style={{ 
           margin: 0, 
           whiteSpace: 'pre-wrap', 
           wordBreak: 'break-all', 
           color: hasError ? 'var(--danger)' : 'var(--text-primary)',
-          opacity: output ? 1 : 0.3
+          opacity: output ? 1 : 0.3,
+          fontSize: '0.8rem'
         }}>
-          {output || 'Run your code to see results here...'}
+          {output || 'Run your code...'}
         </pre>
       </div>
 

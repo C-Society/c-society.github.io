@@ -115,20 +115,20 @@ export const LessonPanel = () => {
       
       <div className="panel-content">
         {!currentLesson ? (
-          <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-            <Sparkles size={48} style={{ color: 'var(--accent-primary)', opacity: 0.8, marginBottom: '1.5rem' }} />
-            <h3 style={{ marginBottom: '0.5rem' }}>Start Your Journey</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-              I'll create a personalized {language} lesson just for you.
+          <div style={{ textAlign: 'center', marginTop: '1.5rem', padding: '1rem' }}>
+            <Sparkles size={40} style={{ color: 'var(--accent-primary)', opacity: 0.8, marginBottom: '1rem' }} />
+            <h3 style={{ marginBottom: '0.5rem', fontSize: '1.2rem' }}>Ready to Level Up?</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+              Your A.I. tutor is ready to build a custom path for you.
             </p>
             <button 
               onClick={handleGenerateNext} 
               disabled={isGenerating}
               className="btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto', width: '100%', justifyContent: 'center' }}
             >
               <Sparkles size={18} />
-              {isGenerating ? 'Analyzing...' : 'Generate My First Lesson'}
+              {isGenerating ? 'Analyzing...' : 'Begin My First Lesson'}
             </button>
           </div>
         ) : (
@@ -192,17 +192,17 @@ export const LessonPanel = () => {
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '0.8rem', marginTop: '0.5rem' }}>
-              <button className="btn-secondary" onClick={completeCurrent} style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-                <Trophy size={16} /> Skip
+            <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.5rem', flexDirection: window.innerWidth < 600 ? 'column' : 'row' }}>
+              <button className="btn-secondary" onClick={completeCurrent} style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', fontSize: '0.85rem', padding: '0.6rem' }}>
+                <Trophy size={14} /> Skip
               </button>
               <button 
                 className="btn-primary" 
                 onClick={handleGenerateNext} 
                 disabled={isGenerating} 
-                style={{ flex: 1.5, fontSize: '0.9rem' }}
+                style={{ flex: 1.5, fontSize: '0.85rem', padding: '0.6rem' }}
               >
-                {isGenerating ? 'Personalizing...' : 'Next Lesson'}
+                {isGenerating ? 'Thinking...' : 'Next Lesson'}
               </button>
             </div>
           </div>

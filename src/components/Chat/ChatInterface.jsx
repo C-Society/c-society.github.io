@@ -168,18 +168,18 @@ export const ChatInterface = () => {
 
       <div className="panel-content chat-messages" style={{ flex: 1, overflowY: 'auto', padding: '1.2rem' }}>
         {chatHistory.length === 0 && (
-          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '2rem' }}>
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '1rem' }}>
              <div style={{ 
-                width: '60px', height: '60px', 
+                width: '50px', height: '50px', 
                 background: 'rgba(99, 102, 241, 0.1)', 
                 borderRadius: '50%', 
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 1rem',
+                margin: '0 auto 0.75rem',
                 border: '1px solid var(--border-glow)'
               }}>
-                <Sparkles size={30} color="var(--accent-primary)" />
+                <Sparkles size={24} color="var(--accent-primary)" />
               </div>
-            <h3>Hello! I'm your tutor.</h3>
+            <h3 style={{ fontSize: '1.2rem' }}>Hi there!</h3>
             <p style={{ fontSize: '0.9rem', marginBottom: '1.5rem' }}>Ask me anything about your coding journey!</p>
             
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center' }}>
@@ -192,10 +192,10 @@ export const ChatInterface = () => {
           </div>
         )}
         
-        {chatHistory.map((msg, index) => (
           <div key={index} className={`chat-bubble ${msg.role === 'user' ? 'chat-user' : 'chat-agent'}`} style={{
             boxShadow: msg.role === 'agent' ? '0 4px 12px rgba(99, 102, 241, 0.1)' : 'none',
-            border: msg.role === 'agent' ? '1px solid rgba(99, 102, 241, 0.2)' : '1px solid transparent'
+            border: msg.role === 'agent' ? '1px solid rgba(99, 102, 241, 0.2)' : '1px solid transparent',
+            maxWidth: window.innerWidth < 600 ? '95%' : '85%'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: msg.role === 'user' ? 'var(--text-secondary)' : 'var(--accent-primary)' }}>
